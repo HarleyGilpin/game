@@ -91,7 +91,9 @@ class LoginDecoder(
             if (rsaExponent != null && rsaModulus != null) {
                 val secureBufLength = buf.readUnsignedShort()
                 val secureBuf = buf.readBytes(secureBufLength)
-                val rsaValue = BigInteger(secureBuf.array()).modPow(rsaExponent, rsaModulus)
+                val rsaBytes = ByteArray(secureBuf.readableBytes())
+                secureBuf.readBytes(rsaBytes)
+                val rsaValue = BigInteger(rsaBytes).modPow(rsaExponent, rsaModulus)
                 Unpooled.wrappedBuffer(rsaValue.toByteArray())
             } else {
                 buf
