@@ -41,7 +41,7 @@ class FilestoreDecoder(
                 ctx.writeAndFlush(LoginResultType.REVISION_MISMATCH).addListener(ChannelFutureListener.CLOSE)
             } else {
                 setState(FilestoreDecoderState.ARCHIVE_REQUEST)
-                ctx.writeAndFlush(LoginResultType.ACCEPTABLE)
+                ctx.writeAndFlush(LoginResultType.AD_COUNTDOWN_THEN_END)
             }
         }
     }

@@ -17,7 +17,7 @@ class SimpleWorldVerificationService : WorldVerificationService {
         when {
             world.rebootTimer != -1 && world.rebootTimer < World.REJECT_LOGIN_REBOOT_THRESHOLD -> LoginResultType.SERVER_UPDATE
             world.getPlayerForName(displayName) != null -> LoginResultType.ALREADY_ONLINE
-            world.players.count() >= world.players.capacity -> LoginResultType.MAX_PLAYERS
+            world.players.count() >= world.players.capacity -> LoginResultType.LOGIN_LIMIT_EXCEEDED
             else -> null
         }
 }
