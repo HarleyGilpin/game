@@ -85,21 +85,25 @@ class LoginDecoder(
     ) {
         buf.markReaderIndex()
 
-        buf.readUnsignedByte()
+        val opcode = buf.readUnsignedByte().toInt()
+        logger.info { "Opcode: $opcode" }
 
         val secureBuf: ByteBuf =
             if (rsaExponent != null && rsaModulus != null) {
                 val secureBufLength = buf.readUnsignedShort()
-                val secureBuf = buf.readBytes(secureBufLength)
-                val rsaBytes = ByteArray(secureBuf.readableBytes())
-                secureBuf.readBytes(rsaBytes)
-                val rsaValue = BigInteger(rsaBytes).modPow(rsaExponent, rsaModulus)
+                logger.info { "Secure buffer length: $secureBufLength" }
+                val secureBytes = ByteArray(secureBufLength)
+                buf.readBytes(secureBytes)
+                logger.info { "Secure bytes: ${secureBytes.contentToString()}" }
+                val rsaValue = BigInteger(secureBytes).modPow(rsaExponent, rsaModulus)
+                logger.info { "RSA value: ${rsaValue.toByteArray().contentToString()}" }
                 Unpooled.wrappedBuffer(rsaValue.toByteArray())
             } else {
                 buf
             }
 
         val successfulEncryption = secureBuf.readUnsignedByte().toInt() == 10
+        logger.info { "Successful encryption: $successfulEncryption" }
         if (!successfulEncryption) {
             buf.resetReaderIndex()
             logger.info("Channel '{}' login request rejected.", ctx.channel())
@@ -110,6 +114,7 @@ class LoginDecoder(
         val xteaKeys = IntArray(4)
         for (i in xteaKeys.indices) {
             xteaKeys[i] = secureBuf.readInt()
+            logger.info { "XTEA key $i: ${xteaKeys[i]}" }
         }
 
         secureBuf.readLong()
@@ -120,15 +125,17 @@ class LoginDecoder(
         if (reconnecting) {
             for (i in previousXteaKeys.indices) {
                 previousXteaKeys[i] = secureBuf.readInt()
+                logger.info { "Previous XTEA key $i: ${previousXteaKeys[i]}" }
             }
             password = null
         } else {
             password = secureBuf.readString()
+            logger.info { "Password: $password" }
         }
 
-        secureBuf.clear()
         val xteaBuf = buf.decipher(xteaKeys)
         val username = xteaBuf.readString().trim()
+        logger.info { "Username: $username" }
 
         if (!validateUsername(username)) {
             ctx.writeResponse(LoginResultType.INVALID_CREDENTIALS)
@@ -139,7 +146,9 @@ class LoginDecoder(
         val clientResizable = (clientSettings shr 1) == 1
         val clientWidth = xteaBuf.readUnsignedShort()
         val clientHeight = xteaBuf.readUnsignedShort()
-        logger.info { "User '$username' login request from ${ctx.channel()}." }
+        logger.info {
+            "Client settings: $clientSettings, resizable: $clientResizable, width: $clientWidth, height: $clientHeight"
+        }
 
         val request =
             LoginRequest(
