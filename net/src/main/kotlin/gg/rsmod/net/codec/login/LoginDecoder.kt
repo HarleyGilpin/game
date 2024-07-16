@@ -143,11 +143,13 @@ class LoginDecoder(
         }
 
         val clientSettings = xteaBuf.readByte().toInt()
-        val clientResizable = (clientSettings shr 1) == 1
+        val displayMode = xteaBuf.readUnsignedByte().toInt() // Modes: 1 = Fixed, 2 = Resizeable, 3 = Fullscreen
+        val clientResizable = displayMode == 2
         val clientWidth = xteaBuf.readUnsignedShort()
         val clientHeight = xteaBuf.readUnsignedShort()
         logger.info {
-            "Client settings: $clientSettings, resizable: $clientResizable, width: $clientWidth, height: $clientHeight"
+            "Width: $clientWidth, Height: $clientHeight, clientSettings: $clientSettings, displayMode: $displayMode, " +
+                "clientResizable: $clientResizable"
         }
 
         val request =
